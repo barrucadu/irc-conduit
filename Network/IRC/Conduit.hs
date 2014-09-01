@@ -84,8 +84,8 @@ exceptionalConduit = do
     Just x  -> yield x >> exceptionalConduit
     Nothing -> liftIO . ioError $ userError "Upstream source closed."
 
--- |A conduit which as input irc messages, and produces as output the
--- encoded bytestring representation.
+-- |A conduit which takes as input irc messages, and produces as
+-- output the encoded bytestring representation.
 ircEncoder :: Monad m => Conduit IrcMessage m ByteString
 ircEncoder = awaitForever (yield . (<>"\r\n") . encode)
 

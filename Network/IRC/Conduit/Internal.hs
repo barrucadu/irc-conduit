@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- |Internal IRC conduit types utilities.
+-- |Internal IRC conduit types and utilities.
 module Network.IRC.Conduit.Internal where
 
 import Control.Applicative ((<$>))
@@ -45,8 +45,8 @@ data Event a = Event
     -- ^The decoded message. If decoding failed, this will be a
     -- Nothing, and the raw bytestring should be consulted.
     , _message :: Message a
-    -- ^This will be equal to fromJust _msg, unless _msg is null, in
-    -- which case this will be RawMsg. This is provided to make
+    -- ^This will be equal to fromJust _msg, unless _msg is Nothing,
+    -- in which case this will be RawMsg. This is provided to make
     -- pattern matching easier.
     }
     deriving (Eq, Show)
@@ -127,7 +127,7 @@ instance Functor Message where
 
 -- *Decoding messages
 
-decode :: ByteString -> Event ByteString
+decode :: ByteString -> IrcEvent
 decode bs = Event { _raw     = bs
                   , _source  = source
                   , _msg     = message
@@ -195,7 +195,7 @@ decode bs = Event { _raw     = bs
 
 -- *Encoding messages
 
-encode :: Message ByteString -> ByteString
+encode :: IrcMessage -> ByteString
 encode (Privmsg t (Left ctcpbs))  = mkMessage "PRIVMSG" [t, getUnderlyingByteString ctcpbs]
 encode (Privmsg t (Right bs))     = mkMessage "PRIVMSG" [t, bs]
 encode (Notice  t (Left ctcpbs))  = mkMessage "NOTICE"  [t, getUnderlyingByteString ctcpbs]
@@ -226,5 +226,5 @@ rawMessage :: ByteString
            -- ^The command
            -> [ByteString]
            -- ^The arguments
-           -> Message ByteString
+           -> IrcMessage
 rawMessage cmd = RawMsg . mkMessage cmd
