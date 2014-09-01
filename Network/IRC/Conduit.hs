@@ -38,7 +38,7 @@ import Control.Applicative      ((*>))
 import Control.Arrow            ((&&&))
 import Control.Concurrent       (newMVar, takeMVar, putMVar, threadDelay)
 import Control.Concurrent.Async (Concurrently(..))
-import Control.Monad            (when, void)
+import Control.Monad            (when)
 import Control.Monad.IO.Class   (MonadIO, liftIO)
 import Data.ByteString          (ByteString, isSuffixOf)
 import Data.Conduit             (Conduit, Consumer, Producer, (=$), ($$), (=$=), await, awaitForever, yield)
@@ -97,8 +97,8 @@ floodProtector :: MonadIO m
                -- ^The minimum time between sending adjacent messages.
                -> IO (Conduit a m a)
 floodProtector delay = do
-  now  <- liftIO getCurrentTime
-  mvar <- liftIO $ newMVar now
+  now  <- getCurrentTime
+  mvar <- newMVar now
 
   return $ conduit mvar
 
