@@ -116,24 +116,24 @@ floodProtector delay = do
 
   return $ conduit mvar
 
-  where conduit mvar = awaitForever $ \val -> do
-          -- Block until the delay has passed
-          liftIO $ do
-            lastT <- takeMVar mvar
-            now   <- getCurrentTime
+  where
+    conduit mvar = awaitForever $ \val -> do
+      -- Block until the delay has passed
+      liftIO $ do
+        lastT <- takeMVar mvar
+        now   <- getCurrentTime
 
-            let next = addUTCTime delay lastT
+        let next = addUTCTime delay lastT
 
-            when (next < now) $
-              threadDelay . ceiling $ 1000000 * diffUTCTime next now
+        when (next < now) $
+          threadDelay . ceiling $ 1000000 * diffUTCTime next now
 
-          -- Update the time
-          liftIO $ do
-            now' <- getCurrentTime
-            putMVar mvar now'
+      -- Update the time
+        now' <- getCurrentTime
+        putMVar mvar now'
 
-          -- Send the value downstream
-          yield val
+      -- Send the value downstream
+      yield val
 
 -- *Utilities
 
