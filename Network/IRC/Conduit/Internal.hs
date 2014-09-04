@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- |Internal IRC conduit types and utilities.
@@ -49,13 +50,7 @@ data Event a = Event
     -- in which case this will be RawMsg. This is provided to make
     -- pattern matching easier.
     }
-    deriving (Eq, Show)
-
-instance Functor Event where
-    fmap f ev = ev { _source  =      f <$> _source  ev
-                   , _msg     = fmap f <$> _msg     ev
-                   , _message =      f <$> _message ev
-                   }
+    deriving (Eq, Functor, Show)
 
 -- |The source of an IRC message.
 data Source a = User (NickName a)
@@ -64,12 +59,7 @@ data Source a = User (NickName a)
               -- ^The message comes from a user in a channel.
               | Server (ServerName a)
               -- ^The message comes directly from the server.
-              deriving (Eq, Show)
-
-instance Functor Source where
-    fmap f (User n) = User $ f n
-    fmap f (Channel c n) = Channel (f c) $ f n
-    fmap f (Server s) = Server $ f s
+              deriving (Eq, Functor, Show)
 
 -- |A decoded IRC message.
 data Message a = Privmsg (Target a) (Either CTCPByteString a)
@@ -107,23 +97,7 @@ data Message a = Privmsg (Target a) (Either CTCPByteString a)
                -- arbitrary bytestrings to the IRC server. Naturally,
                -- this should only be used when you are confident that
                -- the produced bytestring will be a valid IRC command.
-               deriving (Eq, Show)
-
-instance Functor Message where
-    fmap f (Privmsg t msg) = Privmsg (f t) $ f <$> msg
-    fmap f (Notice  t msg) = Notice  (f t) $ f <$> msg
-    fmap f (Nick n) = Nick $ f n
-    fmap f (Join c) = Join $ f c
-    fmap f (Part c r) = Part (f c) $ f <$> r
-    fmap f (Quit r) = Quit $ f <$> r
-    fmap f (Mode t ms mf ma) = Mode (f t) ms (map f mf) $ map f ma
-    fmap f (Topic c t) = Topic (f c) $ f t
-    fmap f (Invite c n) = Invite (f c) $ f n
-    fmap f (Kick c n r) = Kick (f c) (f n) $ f <$> r
-    fmap f (Ping s1 s2) = Ping (f s1) $ f <$> s2
-    fmap f (Pong s) = Pong $ f s
-    fmap f (Numeric n na) = Numeric n $ map f na
-    fmap f (RawMsg msg) = RawMsg $ f msg
+               deriving (Eq, Functor, Show)
 
 -- *Decoding messages
 
