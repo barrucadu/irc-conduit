@@ -29,7 +29,7 @@ module Network.IRC.Conduit
 
     -- *Utilities
     , ircClient
-    , ircTlsClient
+    , ircTLSClient
     , rawMessage
     , toByteString
     ) where
@@ -142,8 +142,8 @@ ircClient port host start cons prod = runTCPClient settings $ \a -> networkCondu
 
 -- |Connect to a network server, with TLS, returning the decoder and
 -- encoder conduits.
-ircTlsClient :: Int -> ByteString -> IO () -> Consumer IrcEvent IO () -> Producer IO IrcMessage -> IO ()
-ircTlsClient port host start cons prod = runTLSClient settings $ \a -> networkConduits a start cons prod
+ircTLSClient :: Int -> ByteString -> IO () -> Consumer IrcEvent IO () -> Producer IO IrcMessage -> IO ()
+ircTLSClient port host start cons prod = runTLSClient settings $ \a -> networkConduits a start cons prod
     where settings = tlsClientConfig port host
 
 -- |Construct a pair of conduits from a network connection
