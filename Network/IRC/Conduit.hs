@@ -30,6 +30,7 @@ module Network.IRC.Conduit
     -- *Utilities
     , ircClient
     , ircTLSClient
+    , ircWithConn
     , rawMessage
     , toByteString
     ) where
@@ -137,22 +138,37 @@ ircClient :: Int
           -> Producer IO IrcMessage
           -- ^The producer of irc messages
           -> IO ()
-ircClient port host start cons prod = runTCPClient settings $ \a -> networkConduits a start cons prod
-    where settings = clientSettings port host
+ircClient = ircWithConn clientSettings runTCPClient
 
--- |Connect to a network server, with TLS, returning the decoder and
--- encoder conduits.
+-- |Like 'ircClient', but with TLS.
 ircTLSClient :: Int -> ByteString -> IO () -> Consumer IrcEvent IO () -> Producer IO IrcMessage -> IO ()
-ircTLSClient port host start cons prod = runTLSClient settings $ \a -> networkConduits a start cons prod
-    where settings = tlsClientConfig port host
+ircTLSClient = ircWithConn tlsClientConfig runTLSClient
 
--- |Construct a pair of conduits from a network connection
-networkConduits :: AppData -> IO () -> Consumer IrcEvent IO () -> Producer IO IrcMessage -> IO ()
-networkConduits appdata start cons prod = go `catchIOError` const (return ())
-    where go = runConcurrently $
-                 Concurrently start *>
-                 Concurrently (appSource appdata =$= exceptionalConduit $$ ircDecoder =$ cons) *>
-                 Concurrently (prod $$ ircEncoder =$ appSink appdata)
+-- |Use the provided network functions to connect to an IRC network
+-- and run the conduits.
+ircWithConn :: (Int -> ByteString -> config)
+            -- ^The configuration constructor
+            -> (config -> (AppData -> IO ()) -> IO ())
+            -- ^The network connector
+            -> Int
+            -> ByteString
+            -> IO ()
+            -> Consumer IrcEvent IO ()
+            -> Producer IO IrcMessage
+            -> IO ()
+ircWithConn mkconf runner port host start cons prod = go `catchIOError` ignore
+  where
+    -- Start the connection and concurrently run the initialiser,
+    -- event consumer, and message sources: terminating as soon as one
+    -- throws an exception.
+    go = runner (mkconf port host) $ \appdata ->
+           runConcurrently $
+             Concurrently start *>
+             Concurrently (appSource appdata =$= exceptionalConduit $$ ircDecoder =$ cons) *>
+             Concurrently (prod $$ ircEncoder =$ appSink appdata)
+
+    -- Ignore all exceptions and just halt.
+    ignore _ = return ()
 
 -- |Convert a message to a bytestring
 toByteString :: IrcMessage -> ByteString
