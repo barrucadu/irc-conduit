@@ -19,7 +19,10 @@ synopsis:            Streaming IRC message library using conduits.
 -- description:         
 
 -- URL for the project homepage or repository.
-homepage:            https://github.com/barrucadu/yukibot
+homepage:            https://github.com/barrucadu/irc-conduit
+
+-- URL where users should direct bug reports.
+bug-reports:         https://github.com/barrucadu/irc-conduit/issues
 
 -- The license under which the package is released.
 license:             OtherLicense
