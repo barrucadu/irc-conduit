@@ -107,65 +107,65 @@ decode bs = Event { _raw     = bs
                   , _msg     = message
                   , _message = fromMaybe (RawMsg bs) message
                   }
-    where (source, message) = case I.decode bs of
-                                Just ircmsg -> decode' ircmsg
-                                -- Fallback for when we can't parse
-                                Nothing     -> (Server "", Nothing)
+  where
+    (source, message) = case I.decode bs of
+      Just ircmsg -> decode' ircmsg
+      -- Fallback for when we can't parse
+      Nothing     -> (Server "", Nothing)
 
-          decode' msg = case msg of
-                          -- Disambiguate PRIVMSG and NOTICE source by
-                          -- checking the first character of the
-                          -- target
-                          I.Message (Just (I.NickName n _ _)) "PRIVMSG" [t, m] | isChan t  -> (Channel t n, privmsg t m)
-                                                                               | otherwise -> (User n,      privmsg t m)
+    decode' msg = case msg of
+      -- Disambiguate PRIVMSG and NOTICE source by checking the first
+      -- character of the target
+      I.Message (Just (I.NickName n _ _)) "PRIVMSG" [t, m] | isChan t  -> (Channel t n, privmsg t m)
+                                                           | otherwise -> (User n,      privmsg t m)
 
-                          I.Message (Just (I.NickName n _ _)) "NOTICE"  [t, m] | isChan t  -> (Channel t n, notice t m)
-                                                                               | otherwise -> (User n,      notice t m)
+      I.Message (Just (I.NickName n _ _)) "NOTICE"  [t, m] | isChan t  -> (Channel t n, notice t m)
+                                                           | otherwise -> (User n,      notice t m)
 
-                          I.Message (Just (I.NickName n _ _)) "NICK"   [n']      -> (User n,      Just $ Nick n')
-                          I.Message (Just (I.NickName n _ _)) "JOIN"   [c]       -> (Channel c n, Just $ Join c)
-                          I.Message (Just (I.NickName n _ _)) "PART"   [c]       -> (Channel c n, Just $ Part c Nothing)
-                          I.Message (Just (I.NickName n _ _)) "PART"   [c, r]    -> (Channel c n, Just $ Part c $ Just r)
-                          I.Message (Just (I.NickName n _ _)) "QUIT"   []        -> (User n,      Just $ Quit Nothing)
-                          I.Message (Just (I.NickName n _ _)) "QUIT"   [r]       -> (User n,      Just $ Quit $ Just r)
-                          I.Message (Just (I.NickName n _ _)) "KICK"   [c, u]    -> (Channel c n, Just $ Kick c u Nothing)
-                          I.Message (Just (I.NickName n _ _)) "KICK"   [c, u, r] -> (Channel c n, Just $ Kick c u $ Just r)
-                          I.Message (Just (I.NickName n _ _)) "INVITE" [_, c]    -> (User n,      Just $ Invite c n)
-                          I.Message (Just (I.NickName n _ _)) "TOPIC"  [c, t]    -> (Channel c n, Just $ Topic  c t)
+      I.Message (Just (I.NickName n _ _)) "NICK"   [n']      -> (User n,      Just $ Nick n')
+      I.Message (Just (I.NickName n _ _)) "JOIN"   [c]       -> (Channel c n, Just $ Join c)
+      I.Message (Just (I.NickName n _ _)) "PART"   [c]       -> (Channel c n, Just $ Part c Nothing)
+      I.Message (Just (I.NickName n _ _)) "PART"   [c, r]    -> (Channel c n, Just $ Part c $ Just r)
+      I.Message (Just (I.NickName n _ _)) "QUIT"   []        -> (User n,      Just $ Quit Nothing)
+      I.Message (Just (I.NickName n _ _)) "QUIT"   [r]       -> (User n,      Just $ Quit $ Just r)
+      I.Message (Just (I.NickName n _ _)) "KICK"   [c, u]    -> (Channel c n, Just $ Kick c u Nothing)
+      I.Message (Just (I.NickName n _ _)) "KICK"   [c, u, r] -> (Channel c n, Just $ Kick c u $ Just r)
+      I.Message (Just (I.NickName n _ _)) "INVITE" [_, c]    -> (User n,      Just $ Invite c n)
+      I.Message (Just (I.NickName n _ _)) "TOPIC"  [c, t]    -> (Channel c n, Just $ Topic  c t)
 
-                          I.Message (Just (I.NickName n _ _)) "MODE" (t:fs:as) | n == t     -> (User n,      mode t fs as)
-                                                                               | otherwise -> (Channel t n, mode t fs as)
+      I.Message (Just (I.NickName n _ _)) "MODE" (t:fs:as) | n == t     -> (User n,      mode t fs as)
+                                                           | otherwise -> (Channel t n, mode t fs as)
 
-                          I.Message (Just (I.Server s)) "PING" [s1]     -> (Server s, Just $ Ping s1 Nothing)
-                          I.Message (Just (I.Server s)) "PING" [s1, s2] -> (Server s, Just $ Ping s1 $ Just s2)
-                          I.Message Nothing             "PING" [s1]     -> (Server s1, Just $ Ping s1 Nothing)
-                          I.Message Nothing             "PING" [s1, s2] -> (Server s1, Just $ Ping s1 $ Just s2)
+      I.Message (Just (I.Server s)) "PING" [s1]     -> (Server s, Just $ Ping s1 Nothing)
+      I.Message (Just (I.Server s)) "PING" [s1, s2] -> (Server s, Just $ Ping s1 $ Just s2)
+      I.Message Nothing             "PING" [s1]     -> (Server s1, Just $ Ping s1 Nothing)
+      I.Message Nothing             "PING" [s1, s2] -> (Server s1, Just $ Ping s1 $ Just s2)
 
-                          I.Message (Just (I.Server s)) n args | isNumeric n -> (Server s, numeric n args)
+      I.Message (Just (I.Server s)) n args | isNumeric n -> (Server s, numeric n args)
 
-                          -- Fallback cases
-                          I.Message (Just (I.Server s))       _ _ -> (Server s, Nothing)
-                          I.Message (Just (I.NickName n _ _)) _ _ -> (User n,   Nothing)
-                          _ -> (Server "", Nothing)
+      -- Fallback cases
+      I.Message (Just (I.Server s))       _ _ -> (Server s, Nothing)
+      I.Message (Just (I.NickName n _ _)) _ _ -> (User n,   Nothing)
+      _ -> (Server "", Nothing)
 
-          -- An IRC channel name can start with '#', '&', '+', or '!',
-          -- all of which ahve different meanings. However, most
-          -- servers only support '#'.
-          isChan t = B.take 1 t `elem` ["#", "&", "+", "!"]
+    -- An IRC channel name can start with '#', '&', '+', or '!', all
+    -- of which have different meanings. However, most servers only
+    -- support '#'.
+    isChan t = B.take 1 t `elem` ["#", "&", "+", "!"]
 
-          -- Check if the message looks like a ctcp or not, and produce the appropriate message type.
-          privmsg t = Just . Privmsg t . (Right `orCTCP` Left)
-          notice  t = Just . Notice  t . (Right `orCTCP` Left)
+    -- Check if the message looks like a ctcp or not, and produce the appropriate message type.
+    privmsg t = Just . Privmsg t . (Right `orCTCP` Left)
+    notice  t = Just . Notice  t . (Right `orCTCP` Left)
 
-          -- Decode a set of mode changes
-          mode t fs as = case unpack fs of
-                           (f:fs') | f == fromIntegral (ord '+') -> Just $ Mode t True  (map singleton fs') as
-                                   | f == fromIntegral (ord '-') -> Just $ Mode t False (map singleton fs') as
-                           _ -> Nothing
+    -- Decode a set of mode changes
+    mode t fs as = case unpack fs of
+      (f:fs') | f == fromIntegral (ord '+') -> Just $ Mode t True  (map singleton fs') as
+                 | f == fromIntegral (ord '-') -> Just $ Mode t False (map singleton fs') as
+      _ -> Nothing
 
-          -- Parse the number in a numeric response
-          isNumeric = isJust . (readMaybe :: String -> Maybe Int) . B8.unpack
-          numeric n args = flip Numeric args <$> readMaybe (B8.unpack n)
+    -- Parse the number in a numeric response
+    isNumeric = isJust . (readMaybe :: String -> Maybe Int) . B8.unpack
+    numeric n args = flip Numeric args <$> readMaybe (B8.unpack n)
 
 -- *Encoding messages
 
