@@ -41,7 +41,7 @@ import Control.Concurrent       (newMVar, takeMVar, putMVar, threadDelay)
 import Control.Concurrent.Async (Concurrently(..))
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (MonadIO, liftIO)
-import Data.ByteString          (ByteString, isSuffixOf)
+import Data.ByteString          (ByteString, isSuffixOf, singleton)
 import Data.Conduit             (Conduit, Consumer, Producer, (=$), ($$), (=$=), await, awaitForever, yield)
 import Data.Conduit.Network     (AppData, clientSettings, runTCPClient, appSource, appSink)
 import Data.Conduit.Network.TLS (tlsClientConfig, runTLSClient)
@@ -70,17 +70,20 @@ chunked = chunked' ""
       case val of
         Just val' ->
           let
+            carriage = fromIntegral $ fromEnum '\r'
+            newline  = fromIntegral $ fromEnum '\n'
+
             -- Split on '\n's, removing any stray '\r's (line endings
             -- are usually '\r\n's, but this isn't certain).
-            bytes    = B.filter (/=0o015) $ leftover <> val'
-            splitted = B.split 0o012 bytes
+            bytes    = B.filter (/=carriage) $ leftover <> val'
+            splitted = B.split newline bytes
 
             -- If the last chunk ends with a '\n', then we have a
             -- complete message at the end, and can yield it
             -- immediately. Otherwise, store the partial message to
             -- prepend to the next bytestring received.
             (toyield, remainder)
-              | "\n" `isSuffixOf` bytes = (splitted, "")
+              | singleton newline `isSuffixOf` bytes = (splitted, "")
               | otherwise = init &&& last $ splitted
 
           in do
