@@ -58,6 +58,8 @@ library
   
   -- Modules included in this library but not exported.
   other-modules:       Network.IRC.Conduit.Internal
+                     , Network.IRC.Conduit.Internal.Conduits
+                     , Network.IRC.Conduit.Internal.Messages
 
   ghc-options:         -Wall
   

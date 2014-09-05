@@ -38,13 +38,12 @@ module Network.IRC.Conduit
     ) where
 
 import Control.Applicative      ((*>))
-import Control.Arrow            ((&&&))
 import Control.Concurrent       (newMVar, takeMVar, putMVar, threadDelay)
 import Control.Concurrent.Async (Concurrently(..))
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (MonadIO, liftIO)
-import Data.ByteString          (ByteString, isSuffixOf, singleton)
-import Data.Conduit             (Conduit, Consumer, Producer, (=$), ($$), (=$=), await, awaitForever, yield)
+import Data.ByteString          (ByteString)
+import Data.Conduit             (Conduit, Consumer, Producer, (=$), ($$), (=$=), awaitForever, yield)
 import Data.Conduit.Network     (AppData, clientSettings, runTCPClient, appSource, appSink)
 import Data.Conduit.Network.TLS (tlsClientConfig, runTLSClient)
 import Data.Monoid              ((<>))
@@ -52,56 +51,12 @@ import Data.Time.Clock          (NominalDiffTime, getCurrentTime, addUTCTime, di
 import Network.IRC.Conduit.Internal
 import System.IO.Error          (catchIOError)
 
-import qualified Data.ByteString as B
-
 -- *Conduits
 
 -- |A conduit which takes as input bytestrings representing encoded
 -- IRC messages, and decodes them to events.
 ircDecoder :: Monad m => Conduit ByteString m IrcEvent
 ircDecoder = chunked =$= awaitForever (yield . fromByteString)
-
--- |Split up incoming bytestrings into new lines.
-chunked :: Monad m => Conduit ByteString m ByteString
-chunked = chunked' ""
-  where
-    chunked' leftover = do
-      -- Wait for a value from upstream
-      val <- await
-
-      case val of
-        Just val' ->
-          let
-            carriage = fromIntegral $ fromEnum '\r'
-            newline  = fromIntegral $ fromEnum '\n'
-
-            -- Split on '\n's, removing any stray '\r's (line endings
-            -- are usually '\r\n's, but this isn't certain).
-            bytes    = B.filter (/=carriage) $ leftover <> val'
-            splitted = B.split newline bytes
-
-            -- If the last chunk ends with a '\n', then we have a
-            -- complete message at the end, and can yield it
-            -- immediately. Otherwise, store the partial message to
-            -- prepend to the next bytestring received.
-            (toyield, remainder)
-              | singleton newline `isSuffixOf` bytes = (splitted, "")
-              | otherwise = init &&& last $ splitted
-
-          in do
-            -- Yield all complete and nonempty messages, and loop.
-            mapM_ yield $ filter (not . B.null) toyield
-            chunked' remainder
-
-        Nothing -> return ()
-
--- |Throw an IO exception when the upstream conduit is closed.
-exceptionalConduit :: MonadIO m => Conduit a m a
-exceptionalConduit = do
-  val <- await
-  case val of
-    Just x  -> yield x >> exceptionalConduit
-    Nothing -> liftIO . ioError $ userError "Upstream source closed."
 
 -- |A conduit which takes as input irc messages, and produces as
 -- output the encoded bytestring representation.
