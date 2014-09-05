@@ -27,10 +27,12 @@ module Network.IRC.Conduit
     , ircEncoder
     , floodProtector
 
-    -- *Utilities
+    -- *Networking
     , ircClient
     , ircTLSClient
     , ircWithConn
+
+    -- *Utilities
     , rawMessage
     , toByteString
     ) where
@@ -57,7 +59,7 @@ import qualified Data.ByteString as B
 -- |A conduit which takes as input bytestrings representing encoded
 -- IRC messages, and decodes them to events.
 ircDecoder :: Monad m => Conduit ByteString m IrcEvent
-ircDecoder = chunked =$= awaitForever (yield . decode)
+ircDecoder = chunked =$= awaitForever (yield . fromByteString)
 
 -- |Split up incoming bytestrings into new lines.
 chunked :: Monad m => Conduit ByteString m ByteString
@@ -104,7 +106,7 @@ exceptionalConduit = do
 -- |A conduit which takes as input irc messages, and produces as
 -- output the encoded bytestring representation.
 ircEncoder :: Monad m => Conduit IrcMessage m ByteString
-ircEncoder = awaitForever (yield . (<>"\r\n") . encode)
+ircEncoder = awaitForever (yield . (<>"\r\n") . toByteString)
 
 -- |A conduit which rate limits output sent downstream. Awaiting on
 -- this conduit will block, even if there is output ready, until the
@@ -138,7 +140,7 @@ floodProtector delay = do
       -- Send the value downstream
       yield val
 
--- *Utilities
+-- *Networking
 
 -- |Connect to a network server, without TLS, and concurrently run the
 -- producer and consumer.
@@ -185,7 +187,3 @@ ircWithConn mkconf runner port host start cons prod = go `catchIOError` ignore
 
     -- Ignore all exceptions and just halt.
     ignore _ = return ()
-
--- |Convert a message to a bytestring
-toByteString :: IrcMessage -> ByteString
-toByteString = encode

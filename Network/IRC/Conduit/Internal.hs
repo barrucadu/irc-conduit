@@ -101,8 +101,8 @@ data Message a = Privmsg (Target a) (Either CTCPByteString a)
 
 -- *Decoding messages
 
-decode :: ByteString -> IrcEvent
-decode bs = Event { _raw     = bs
+fromByteString :: ByteString -> IrcEvent
+fromByteString bs = Event { _raw     = bs
                   , _source  = source
                   , _msg     = message
                   , _message = fromMaybe (RawMsg bs) message
@@ -169,28 +169,30 @@ decode bs = Event { _raw     = bs
 
 -- *Encoding messages
 
-encode :: IrcMessage -> ByteString
-encode (Privmsg t (Left ctcpbs))  = mkMessage "PRIVMSG" [t, getUnderlyingByteString ctcpbs]
-encode (Privmsg t (Right bs))     = mkMessage "PRIVMSG" [t, bs]
-encode (Notice  t (Left ctcpbs))  = mkMessage "NOTICE"  [t, getUnderlyingByteString ctcpbs]
-encode (Notice  t (Right bs))     = mkMessage "NOTICE"  [t, bs]
-encode (Nick n)                   = mkMessage "NICK"    [n]
-encode (Join c)                   = mkMessage "JOIN"    [c]
-encode (Part c (Just r))          = mkMessage "PART"    [c, r]
-encode (Part c Nothing)           = mkMessage "PART"    [c]
-encode (Quit (Just r))            = mkMessage "QUIT"    [r]
-encode (Quit Nothing)             = mkMessage "QUIT"    []
-encode (Mode t True  ms as)       = mkMessage "MODE"    $ t : ("+" <> B.concat ms) : as
-encode (Mode t False ms as)       = mkMessage "MODE"    $ t : ("-" <> B.concat ms) : as
-encode (Invite c n)               = mkMessage "INVITE"  [c, n]
-encode (Topic c bs)               = mkMessage "TOPIC"   [c, bs]
-encode (Kick c n (Just r))        = mkMessage "KICK"    [c, n, r]
-encode (Kick c n Nothing)         = mkMessage "KICK"    [c, n]
-encode (Ping s1 (Just s2))        = mkMessage "PING"    [s1, s2]
-encode (Ping s1 Nothing)          = mkMessage "PING"    [s1]
-encode (Pong s)                   = mkMessage "PONG"    [s]
-encode (Numeric n as)             = mkMessage (fromString $ show n) as
-encode (RawMsg bs)                = bs
+-- |Encode an IRC message into a single bytestring suitable for
+-- sending to the server.
+toByteString :: IrcMessage -> ByteString
+toByteString (Privmsg t (Left ctcpbs))  = mkMessage "PRIVMSG" [t, getUnderlyingByteString ctcpbs]
+toByteString (Privmsg t (Right bs))     = mkMessage "PRIVMSG" [t, bs]
+toByteString (Notice  t (Left ctcpbs))  = mkMessage "NOTICE"  [t, getUnderlyingByteString ctcpbs]
+toByteString (Notice  t (Right bs))     = mkMessage "NOTICE"  [t, bs]
+toByteString (Nick n)                   = mkMessage "NICK"    [n]
+toByteString (Join c)                   = mkMessage "JOIN"    [c]
+toByteString (Part c (Just r))          = mkMessage "PART"    [c, r]
+toByteString (Part c Nothing)           = mkMessage "PART"    [c]
+toByteString (Quit (Just r))            = mkMessage "QUIT"    [r]
+toByteString (Quit Nothing)             = mkMessage "QUIT"    []
+toByteString (Mode t True  ms as)       = mkMessage "MODE"    $ t : ("+" <> B.concat ms) : as
+toByteString (Mode t False ms as)       = mkMessage "MODE"    $ t : ("-" <> B.concat ms) : as
+toByteString (Invite c n)               = mkMessage "INVITE"  [c, n]
+toByteString (Topic c bs)               = mkMessage "TOPIC"   [c, bs]
+toByteString (Kick c n (Just r))        = mkMessage "KICK"    [c, n, r]
+toByteString (Kick c n Nothing)         = mkMessage "KICK"    [c, n]
+toByteString (Ping s1 (Just s2))        = mkMessage "PING"    [s1, s2]
+toByteString (Ping s1 Nothing)          = mkMessage "PING"    [s1]
+toByteString (Pong s)                   = mkMessage "PONG"    [s]
+toByteString (Numeric n as)             = mkMessage (fromString $ show n) as
+toByteString (RawMsg bs)                = bs
 
 mkMessage :: ByteString -> [ByteString] -> ByteString
 mkMessage cmd = I.encode . I.Message Nothing cmd
