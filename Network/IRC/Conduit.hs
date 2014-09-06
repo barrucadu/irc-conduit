@@ -24,6 +24,7 @@ module Network.IRC.Conduit
 
     -- *Conduits
     , ircDecoder
+    , ircLossyDecoder
     , ircEncoder
     , floodProtector
 
@@ -54,9 +55,17 @@ import System.IO.Error          (catchIOError)
 -- *Conduits
 
 -- |A conduit which takes as input bytestrings representing encoded
--- IRC messages, and decodes them to events.
-ircDecoder :: Monad m => Conduit ByteString m IrcEvent
+-- IRC messages, and decodes them to events. If decoding fails, the
+-- original ByteString is just passed through.
+ircDecoder :: Monad m => Conduit ByteString m (Either ByteString IrcEvent)
 ircDecoder = chunked =$= awaitForever (yield . fromByteString)
+
+-- |Like 'ircDecoder', but discards messages which could not be
+-- decoded.
+ircLossyDecoder :: Monad m => Conduit ByteString m IrcEvent
+ircLossyDecoder = chunked =$= awaitForever lossy
+  where
+    lossy bs = either (\_ -> return ()) yield $ fromByteString bs
 
 -- |A conduit which takes as input irc messages, and produces as
 -- output the encoded bytestring representation.
@@ -106,7 +115,7 @@ ircClient :: Int
           -> IO ()
           -- ^Any initialisation work (started concurrently with the
           -- producer and consumer)
-          -> Consumer IrcEvent IO ()
+          -> Consumer (Either ByteString IrcEvent) IO ()
           -- ^The consumer of irc events
           -> Producer IO IrcMessage
           -- ^The producer of irc messages
@@ -114,14 +123,14 @@ ircClient :: Int
 ircClient port host = ircWithConn . runTCPClient $ clientSettings port host
 
 -- |Like 'ircClient', but with TLS.
-ircTLSClient :: Int -> ByteString -> IO () -> Consumer IrcEvent IO () -> Producer IO IrcMessage -> IO ()
+ircTLSClient :: Int -> ByteString -> IO () -> Consumer (Either ByteString IrcEvent) IO () -> Producer IO IrcMessage -> IO ()
 ircTLSClient port host = ircWithConn . runTLSClient $ tlsClientConfig port host
 
 -- |Run the IRC conduits using a provided connection.
 ircWithConn :: ((AppData -> IO ()) -> IO ())
             -- ^The initialised connection.
             -> IO ()
-            -> Consumer IrcEvent IO ()
+            -> Consumer (Either ByteString IrcEvent) IO ()
             -> Producer IO IrcMessage
             -> IO ()
 ircWithConn runner start cons prod = go `catchIOError` ignore

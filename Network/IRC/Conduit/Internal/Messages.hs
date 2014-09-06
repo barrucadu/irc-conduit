@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections     #-}
 
 -- |Internal IRC conduit types and utilities.
 module Network.IRC.Conduit.Internal.Messages where
@@ -7,7 +8,7 @@ module Network.IRC.Conduit.Internal.Messages where
 import Control.Applicative ((<$>))
 import Data.ByteString     (ByteString, singleton, unpack)
 import Data.Char           (ord)
-import Data.Maybe          (fromMaybe, isJust)
+import Data.Maybe          (listToMaybe, isJust)
 import Data.Monoid         ((<>))
 import Data.String         (fromString)
 import Network.IRC.CTCP    (CTCPByteString, getUnderlyingByteString, orCTCP)
@@ -42,13 +43,8 @@ data Event a = Event
     -- ^The message as a bytestring.
     , _source  :: Source a
     -- ^The source of the message (user, channel, or server).
-    , _msg     :: Maybe (Message a)
-    -- ^The decoded message. If decoding failed, this will be a
-    -- Nothing, and the raw bytestring should be consulted.
     , _message :: Message a
-    -- ^This will be equal to fromJust _msg, unless _msg is Nothing,
-    -- in which case this will be RawMsg. This is provided to make
-    -- pattern matching easier.
+    -- ^The decoded message. This will never be a 'RawMsg'.
     }
     deriving (Eq, Functor, Show)
 
@@ -101,52 +97,40 @@ data Message a = Privmsg (Target a) (Either CTCPByteString a)
 
 -- *Decoding messages
 
-fromByteString :: ByteString -> IrcEvent
-fromByteString bs = Event { _raw     = bs
-                  , _source  = source
-                  , _msg     = message
-                  , _message = fromMaybe (RawMsg bs) message
-                  }
-  where
-    (source, message) = case I.decode bs of
-      Just ircmsg -> decode' ircmsg
-      -- Fallback for when we can't parse
-      Nothing     -> (Server "", Nothing)
+fromByteString :: ByteString -> Either ByteString IrcEvent
+fromByteString bs = maybe (Left bs) Right $ uncurry (Event bs) <$> attemptDecode bs
 
+-- |Attempt to decode a ByteString into a message, returning a Nothing
+-- if either the source or the message can't be determined.
+attemptDecode :: ByteString -> Maybe (IrcSource, IrcMessage)
+attemptDecode bs = I.decode bs >>= decode'
+  where
     decode' msg = case msg of
       -- Disambiguate PRIVMSG and NOTICE source by checking the first
       -- character of the target
-      I.Message (Just (I.NickName n _ _)) "PRIVMSG" [t, m] | isChan t  -> (Channel t n, privmsg t m)
-                                                           | otherwise -> (User n,      privmsg t m)
+      I.Message (Just (I.NickName n _ _)) "PRIVMSG" [t, m] | isChan t  -> Just (Channel t n, privmsg t m)
+                                                           | otherwise -> Just (User n,      privmsg t m)
 
-      I.Message (Just (I.NickName n _ _)) "NOTICE"  [t, m] | isChan t  -> (Channel t n, notice t m)
-                                                           | otherwise -> (User n,      notice t m)
+      I.Message (Just (I.NickName n _ _)) "NOTICE"  [t, m] | isChan t  -> Just (Channel t n, notice t m)
+                                                           | otherwise -> Just (User n,      notice t m)
 
-      I.Message (Just (I.NickName n _ _)) "NICK"   [n']      -> (User n,      Just $ Nick n')
-      I.Message (Just (I.NickName n _ _)) "JOIN"   [c]       -> (Channel c n, Just $ Join c)
-      I.Message (Just (I.NickName n _ _)) "PART"   [c]       -> (Channel c n, Just $ Part c Nothing)
-      I.Message (Just (I.NickName n _ _)) "PART"   [c, r]    -> (Channel c n, Just $ Part c $ Just r)
-      I.Message (Just (I.NickName n _ _)) "QUIT"   []        -> (User n,      Just $ Quit Nothing)
-      I.Message (Just (I.NickName n _ _)) "QUIT"   [r]       -> (User n,      Just $ Quit $ Just r)
-      I.Message (Just (I.NickName n _ _)) "KICK"   [c, u]    -> (Channel c n, Just $ Kick c u Nothing)
-      I.Message (Just (I.NickName n _ _)) "KICK"   [c, u, r] -> (Channel c n, Just $ Kick c u $ Just r)
-      I.Message (Just (I.NickName n _ _)) "INVITE" [_, c]    -> (User n,      Just $ Invite c n)
-      I.Message (Just (I.NickName n _ _)) "TOPIC"  [c, t]    -> (Channel c n, Just $ Topic  c t)
+      I.Message (Just (I.NickName n _ _)) "NICK"   [n']    -> Just (User n,      Nick n')
+      I.Message (Just (I.NickName n _ _)) "JOIN"   [c]     -> Just (Channel c n, Join c)
+      I.Message (Just (I.NickName n _ _)) "PART"   (c:r)   -> Just (Channel c n, Part c   $ listToMaybe r)
+      I.Message (Just (I.NickName n _ _)) "QUIT"   r       -> Just (User n,      Quit     $ listToMaybe r)
+      I.Message (Just (I.NickName n _ _)) "KICK"   (c:u:r) -> Just (Channel c n, Kick c u $ listToMaybe r)
+      I.Message (Just (I.NickName n _ _)) "INVITE" [_, c]  -> Just (User n,      Invite c n)
+      I.Message (Just (I.NickName n _ _)) "TOPIC"  [c, t]  -> Just (Channel c n, Topic  c t)
 
-      I.Message (Just (I.NickName n _ _)) "MODE" (t:fs:as) | n == t     -> (User n,      mode t fs as)
-                                                           | otherwise -> (Channel t n, mode t fs as)
+      I.Message (Just (I.NickName n _ _)) "MODE" (t:fs:as) | n == t    -> (User n,)      <$> mode t fs as
+                                                           | otherwise -> (Channel t n,) <$> mode t fs as
 
-      I.Message (Just (I.Server s)) "PING" [s1]     -> (Server s, Just $ Ping s1 Nothing)
-      I.Message (Just (I.Server s)) "PING" [s1, s2] -> (Server s, Just $ Ping s1 $ Just s2)
-      I.Message Nothing             "PING" [s1]     -> (Server s1, Just $ Ping s1 Nothing)
-      I.Message Nothing             "PING" [s1, s2] -> (Server s1, Just $ Ping s1 $ Just s2)
+      I.Message (Just (I.Server s)) "PING" (s1:s2) -> Just (Server s,  Ping s1 $ listToMaybe s2)
+      I.Message Nothing             "PING" (s1:s2) -> Just (Server s1, Ping s1 $ listToMaybe s2)
 
-      I.Message (Just (I.Server s)) n args | isNumeric n -> (Server s, numeric n args)
+      I.Message (Just (I.Server s)) n args | isNumeric n -> (Server s,) <$> numeric n args
 
-      -- Fallback cases
-      I.Message (Just (I.Server s))       _ _ -> (Server s, Nothing)
-      I.Message (Just (I.NickName n _ _)) _ _ -> (User n,   Nothing)
-      _ -> (Server "", Nothing)
+      _ -> Nothing
 
     -- An IRC channel name can start with '#', '&', '+', or '!', all
     -- of which have different meanings. However, most servers only
@@ -154,13 +138,13 @@ fromByteString bs = Event { _raw     = bs
     isChan t = B.take 1 t `elem` ["#", "&", "+", "!"]
 
     -- Check if the message looks like a ctcp or not, and produce the appropriate message type.
-    privmsg t = Just . Privmsg t . (Right `orCTCP` Left)
-    notice  t = Just . Notice  t . (Right `orCTCP` Left)
+    privmsg t = Privmsg t . (Right `orCTCP` Left)
+    notice  t = Notice  t . (Right `orCTCP` Left)
 
     -- Decode a set of mode changes
     mode t fs as = case unpack fs of
       (f:fs') | f == fromIntegral (ord '+') -> Just $ Mode t True  (map singleton fs') as
-                 | f == fromIntegral (ord '-') -> Just $ Mode t False (map singleton fs') as
+              | f == fromIntegral (ord '-') -> Just $ Mode t False (map singleton fs') as
       _ -> Nothing
 
     -- Parse the number in a numeric response
