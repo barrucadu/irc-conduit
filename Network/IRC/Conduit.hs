@@ -111,30 +111,25 @@ ircClient :: Int
           -> Producer IO IrcMessage
           -- ^The producer of irc messages
           -> IO ()
-ircClient = ircWithConn clientSettings runTCPClient
+ircClient port host = ircWithConn . runTCPClient $ clientSettings port host
 
 -- |Like 'ircClient', but with TLS.
 ircTLSClient :: Int -> ByteString -> IO () -> Consumer IrcEvent IO () -> Producer IO IrcMessage -> IO ()
-ircTLSClient = ircWithConn tlsClientConfig runTLSClient
+ircTLSClient port host = ircWithConn . runTLSClient $ tlsClientConfig port host
 
--- |Use the provided network functions to connect to an IRC network
--- and run the conduits.
-ircWithConn :: (Int -> ByteString -> config)
-            -- ^The configuration constructor
-            -> (config -> (AppData -> IO ()) -> IO ())
-            -- ^The network connector
-            -> Int
-            -> ByteString
+-- |Run the IRC conduits using a provided connection.
+ircWithConn :: ((AppData -> IO ()) -> IO ())
+            -- ^The initialised connection.
             -> IO ()
             -> Consumer IrcEvent IO ()
             -> Producer IO IrcMessage
             -> IO ()
-ircWithConn mkconf runner port host start cons prod = go `catchIOError` ignore
+ircWithConn runner start cons prod = go `catchIOError` ignore
   where
     -- Start the connection and concurrently run the initialiser,
     -- event consumer, and message sources: terminating as soon as one
     -- throws an exception.
-    go = runner (mkconf port host) $ \appdata ->
+    go = runner $ \appdata ->
            runConcurrently $
              Concurrently start *>
              Concurrently (appSource appdata =$= exceptionalConduit $$ ircDecoder =$ cons) *>
