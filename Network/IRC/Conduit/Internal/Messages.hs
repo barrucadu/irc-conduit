@@ -61,7 +61,7 @@ data Source a = User (NickName a)
 data Message a = Privmsg (Target a) (Either CTCPByteString a)
                -- ^A message, either from a user or to a channel the
                -- client is in. CTCPs are distinguished by starting
-               -- and ending with a \001 (SOH).
+               -- and ending with a \\001 (SOH).
                | Notice (Target a) (Either CTCPByteString a)
                -- ^Like a privmsg, but should not provoke an automatic
                -- response.
@@ -74,7 +74,7 @@ data Message a = Privmsg (Target a) (Either CTCPByteString a)
                | Quit (Reason a)
                -- ^Someone has left the network.
                | Mode (Target a) IsModeSet [ModeFlag a] [ModeArg a]
-               -- ^Someone has set some modes channel or user modes.
+               -- ^Someone has set some channel modes or user modes.
                | Topic (ChannelName a) a
                -- ^Someone has set the topic of a channel.
                | Invite (ChannelName a) (NickName a)
@@ -92,7 +92,7 @@ data Message a = Privmsg (Target a) (Either CTCPByteString a)
                -- ^Never produced by decoding, but can be used to send
                -- arbitrary bytestrings to the IRC server. Naturally,
                -- this should only be used when you are confident that
-               -- the produced bytestring will be a valid IRC command.
+               -- the produced bytestring will be a valid IRC message.
                deriving (Eq, Functor, Show)
 
 -- *Decoding messages
