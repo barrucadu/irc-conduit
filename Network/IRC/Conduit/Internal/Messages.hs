@@ -22,7 +22,7 @@ import qualified Network.IRC           as I
 type ChannelName a = a
 type NickName    a = a
 type ServerName  a = a
-type Reason      a = a
+type Reason      a = Maybe a
 type IsModeSet     = Bool
 type ModeFlag    a = a
 type ModeArg     a = a
@@ -69,9 +69,9 @@ data Message a = Privmsg (Target a) (Either CTCPByteString a)
                -- ^Someone has updated their nick.
                | Join (ChannelName a)
                -- ^Someone has joined a channel.
-               | Part (ChannelName a) (Maybe (Reason a))
+               | Part (ChannelName a) (Reason a)
                -- ^Someone has left a channel.
-               | Quit (Maybe (Reason a))
+               | Quit (Reason a)
                -- ^Someone has left the network.
                | Mode (Target a) IsModeSet [ModeFlag a] [ModeArg a]
                -- ^Someone has set some modes channel or user modes.
@@ -79,7 +79,7 @@ data Message a = Privmsg (Target a) (Either CTCPByteString a)
                -- ^Someone has set the topic of a channel.
                | Invite (ChannelName a) (NickName a)
                -- ^The client has been invited to a channel.
-               | Kick (ChannelName a) (NickName a) (Maybe (Reason a))
+               | Kick (ChannelName a) (NickName a) (Reason a)
                -- ^Someone has been kicked from a channel.
                | Ping (ServerName a) (Maybe (ServerName a))
                -- ^The client has received a server ping, and should
