@@ -1,4 +1,4 @@
-# irc-conduit: IRC message encoding and decoding + networking
+# [irc-conduit]: IRC message encoding and decoding + networking
 
  - Provides [conduits][conduit] for translating bytestrings into
    "events", and "messages" into bytestrings.
@@ -14,5 +14,6 @@
 Note: this used to be a part of [yukibot][], so if you want the history
 from before this was split out into its own library, check there.
 
-[conduit]: https://hackage.haskell.org/package/conduit
-[yukibot]: https://github.com/barrucadu/yukibot
+[irc-conduit]: http://hackage.haskell.org/package/irc-conduit
+[conduit]:     https://hackage.haskell.org/package/conduit
+[yukibot]:     https://github.com/barrucadu/yukibot
