@@ -2,6 +2,12 @@
 {-# LANGUAGE OverloadedStrings  #-}
 
 -- |Conduits for serialising and deserialising IRC messages.
+--
+-- The 'Event', 'Message', and 'Source' types are parameterised on the
+-- underlying representation, and are functors. Decoding and encoding
+-- only work in terms of 'ByteString's, but the generality is provided
+-- so that programs using this library can operate in terms of 'Text',
+-- or some other more useful representation, with great ease.
 module Network.IRC.Conduit
     ( -- *Type synonyms
       ChannelName
@@ -56,7 +62,7 @@ import System.IO.Error          (catchIOError)
 
 -- |A conduit which takes as input bytestrings representing encoded
 -- IRC messages, and decodes them to events. If decoding fails, the
--- original ByteString is just passed through.
+-- original bytestring is just passed through.
 ircDecoder :: Monad m => Conduit ByteString m (Either ByteString IrcEvent)
 ircDecoder = chunked =$= awaitForever (yield . fromByteString)
 

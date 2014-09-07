@@ -16,7 +16,19 @@ version:             0.1.0.0
 synopsis:            Streaming IRC message library using conduits.
 
 -- A longer description of the package.
--- description:         
+description:
+  IRC messages consist of an optional identifying prefix, a command
+  name, and a list of arguments. The <http://hackage.haskell.org/package/irc irc>
+  package provides a low-level decoding and encoding scheme for
+  messages in terms of ByteStrings, but using this relies on matching
+  names of commands as strings, and unpacking this decoded structure
+  yourself. This package takes it a little further, providing an ADT
+  for IRC messages and sources, and conduits which attempt to decode
+  and encode messages appropriately.
+  .
+  In addition to providing conduits for automatically handling
+  streaming messages, there are also helper functions for connecting
+  to an IRC server and hooking up conduits to the socket.
 
 -- URL for the project homepage or repository.
 homepage:            https://github.com/barrucadu/irc-conduit
