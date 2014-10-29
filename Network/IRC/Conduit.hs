@@ -47,6 +47,7 @@ module Network.IRC.Conduit
 import Control.Applicative      ((*>))
 import Control.Concurrent       (newMVar, takeMVar, putMVar, threadDelay)
 import Control.Concurrent.Async (Concurrently(..))
+import Control.Exception        (catch)
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (MonadIO, liftIO)
 import Data.ByteString          (ByteString)
@@ -56,6 +57,7 @@ import Data.Conduit.Network.TLS (tlsClientConfig, runTLSClient)
 import Data.Monoid              ((<>))
 import Data.Time.Clock          (NominalDiffTime, getCurrentTime, addUTCTime, diffUTCTime)
 import Network.IRC.Conduit.Internal
+import Network.TLS              (TLSException)
 import System.IO.Error          (catchIOError)
 
 -- *Conduits
@@ -139,7 +141,7 @@ ircWithConn :: ((AppData -> IO ()) -> IO ())
             -> Consumer (Either ByteString IrcEvent) IO ()
             -> Producer IO IrcMessage
             -> IO ()
-ircWithConn runner start cons prod = go `catchIOError` ignore
+ircWithConn runner start cons prod = (go `catch` raiseTLS) `catchIOError` ignore
   where
     -- Start the connection and concurrently run the initialiser,
     -- event consumer, and message sources: terminating as soon as one
@@ -152,3 +154,6 @@ ircWithConn runner start cons prod = go `catchIOError` ignore
 
     -- Ignore all exceptions and just halt.
     ignore _ = return ()
+
+    -- Rethrow TLS exceptions as IO exceptions
+    raiseTLS = const . ioError $ userError "TLS exception" :: TLSException -> IO ()

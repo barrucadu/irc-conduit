@@ -10,7 +10,7 @@ name:                irc-conduit
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.1.0.1
+version:             0.1.1.0
 
 -- A short (one-line) description of the package.
 synopsis:            Streaming IRC message library using conduits.
@@ -88,6 +88,7 @@ library
                      , irc-ctcp      >=0.1.1
                      , network-conduit-tls >=1.1
                      , time          >=1.4
+                     , tls
                      , transformers  >=0.3
   
   -- Directories containing source files.
