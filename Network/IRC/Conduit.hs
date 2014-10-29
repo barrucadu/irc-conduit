@@ -156,7 +156,7 @@ ircTLSClient port host = ircWithConn . runTLSClient . mangle $ tlsClientConfig p
           -- First validate with the standard function
           res <- (onServerCertificate $ clientHooks cpara) cs vc sid cc
           -- Then strip out non-issues
-          return $ filter (/=SelfSigned) res
+          return $ filter (`notElem` [UnknownCA, SelfSigned]) res
 
 -- |Run the IRC conduits using a provided connection.
 ircWithConn :: ((AppData -> IO ()) -> IO ())
