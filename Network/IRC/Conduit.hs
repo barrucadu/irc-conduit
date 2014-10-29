@@ -53,11 +53,16 @@ import Control.Monad.IO.Class   (MonadIO, liftIO)
 import Data.ByteString          (ByteString)
 import Data.Conduit             (Conduit, Consumer, Producer, (=$), ($$), (=$=), awaitForever, yield)
 import Data.Conduit.Network     (AppData, clientSettings, runTCPClient, appSource, appSink)
-import Data.Conduit.Network.TLS (tlsClientConfig, runTLSClient)
+import Data.Conduit.Network.TLS (TLSClientConfig(..), tlsClientConfig, runTLSClient)
 import Data.Monoid              ((<>))
+import Data.Text                (unpack)
+import Data.Text.Encoding       (decodeUtf8)
 import Data.Time.Clock          (NominalDiffTime, getCurrentTime, addUTCTime, diffUTCTime)
+import Data.X509.Validation     (FailedReason(..))
+import Network.Connection       (TLSSettings(..))
 import Network.IRC.Conduit.Internal
-import Network.TLS              (TLSException)
+import Network.TLS              (ClientParams(..), ClientHooks(..), Supported(..), TLSException, Version(..), defaultParamsClient)
+import Network.TLS.Extra        (ciphersuite_all)
 import System.IO.Error          (catchIOError)
 
 -- *Conduits
@@ -132,7 +137,26 @@ ircClient port host = ircWithConn . runTCPClient $ clientSettings port host
 
 -- |Like 'ircClient', but with TLS.
 ircTLSClient :: Int -> ByteString -> IO () -> Consumer (Either ByteString IrcEvent) IO () -> Producer IO IrcMessage -> IO ()
-ircTLSClient port host = ircWithConn . runTLSClient $ tlsClientConfig port host
+ircTLSClient port host = ircWithConn . runTLSClient . mangle $ tlsClientConfig port host
+  where
+    -- Override the certificate validation and allowed ciphers.
+    mangle tlsSettings = tlsSettings
+                         { tlsClientTLSSettings = TLSSettings cpara
+                           { clientHooks = (clientHooks cpara)
+                             { onServerCertificate = validate }
+                           , clientSupported = (clientSupported cpara)
+                             { supportedVersions = [TLS12, TLS11, TLS10]
+                             , supportedCiphers = ciphersuite_all }}}
+      where
+        cpara = defaultParamsClient (unpack $ decodeUtf8 host) ""
+
+        -- Make the TLS certificate validation a bit more generous. In
+        -- particular, allow self-signed certificates.
+        validate cs vc sid cc = do
+          -- First validate with the standard function
+          res <- (onServerCertificate $ clientHooks cpara) cs vc sid cc
+          -- Then strip out non-issues
+          return $ filter (/=SelfSigned) res
 
 -- |Run the IRC conduits using a provided connection.
 ircWithConn :: ((AppData -> IO ()) -> IO ())

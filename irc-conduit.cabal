@@ -84,12 +84,15 @@ library
                      , bytestring    >=0.10
                      , conduit       >=1.2
                      , conduit-extra >=1.1
+                     , connection
                      , irc           >=0.6
                      , irc-ctcp      >=0.1.1
                      , network-conduit-tls >=1.1
+                     , text          >=1.0
                      , time          >=1.4
                      , tls
                      , transformers  >=0.3
+                     , x509-validation
   
   -- Directories containing source files.
   -- hs-source-dirs:      
