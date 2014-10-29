@@ -107,7 +107,7 @@ floodProtector delay = do
 
         let next = addUTCTime delay lastT
 
-        when (next < now) $
+        when (now < next) $
           threadDelay . ceiling $ 1000000 * diffUTCTime next now
 
       -- Update the time
