@@ -1,0 +1,9 @@
+flags:
+  text:
+    integer-simple: false
+packages:
+- '.'
+extra-deps:
+- irc-0.6.1.0
+- irc-ctcp-0.1.2.1
+resolver: nightly-2015-07-15
