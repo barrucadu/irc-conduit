@@ -37,7 +37,7 @@ homepage:            https://github.com/barrucadu/irc-conduit
 bug-reports:         https://github.com/barrucadu/irc-conduit/issues
 
 -- The license under which the package is released.
-license:             OtherLicense
+license:             MIT
 
 -- The file containing the license text.
 license-file:        LICENSE
