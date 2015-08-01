@@ -1,9 +1,7 @@
-flags:
-  text:
-    integer-simple: false
+flags: {}
 packages:
 - '.'
 extra-deps:
 - irc-0.6.1.0
 - irc-ctcp-0.1.2.1
-resolver: nightly-2015-07-15
+resolver: lts-2.20
