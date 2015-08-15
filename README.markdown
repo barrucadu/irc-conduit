@@ -32,8 +32,8 @@ Feel free to contact me on GitHub, through IRC (#haskell on freenode),
 or email (mike@barrucadu.co.uk).
 
 [irc-conduit]:  http://hackage.haskell.org/package/irc-conduit
-[build-status]: http://ci.barrucadu.co.uk/job/irc-conduit%20(lts)/badge/icon?style=plastic
-[build-log]:    http://ci.barrucadu.co.uk/job/irc-conduit%20(lts)/
+[build-status]: http://ci.barrucadu.co.uk/job/(irc-conduit)/job/irc-conduit/badge/icon?style=plastic
+[build-log]:    http://ci.barrucadu.co.uk/job/(irc-conduit)/job/irc-conduit/
 [docs]:         https://barrucadu.github.io/irc-conduit/
 [conduit]:      https://hackage.haskell.org/package/conduit
 [yukibot]:      https://github.com/barrucadu/yukibot
