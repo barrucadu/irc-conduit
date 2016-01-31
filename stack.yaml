@@ -10,4 +10,4 @@ extra-deps:
 - irc-0.6.1.0
 - irc-ctcp-0.1.2.1
 
-resolver: lts-3.0
+resolver: lts-4.2
