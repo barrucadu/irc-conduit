@@ -34,6 +34,6 @@ or email (mike@barrucadu.co.uk).
 [irc-conduit]:  http://hackage.haskell.org/package/irc-conduit
 [build-status]: http://ci.barrucadu.co.uk/job/(irc-conduit)/job/irc-conduit/badge/icon?style=plastic
 [build-log]:    http://ci.barrucadu.co.uk/job/(irc-conduit)/job/irc-conduit/
-[docs]:         https://barrucadu.github.io/irc-conduit/
+[docs]:         https://docs.barrucadu.co.uk/irc-conduit
 [conduit]:      https://hackage.haskell.org/package/conduit
 [yukibot]:      https://github.com/barrucadu/yukibot
