@@ -1,7 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 
--- |Internal helper conduits
+-- |
+-- Module      : Network.IRC.Conduit.Internal.Conduits
+-- Copyright   : (c) 2016 Michael Walker
+-- License     : MIT
+-- Maintainer  : Michael Walker <mike@barrucadu.co.uk>
+-- Stability   : experimental
+-- Portability : OverloadedStrings, RankNTypes
+--
+-- Internal helper conduits. This module is NOT considered to form
+-- part of the public interface of this library.
 module Network.IRC.Conduit.Internal.Conduits where
 
 import Control.Arrow          ((&&&))

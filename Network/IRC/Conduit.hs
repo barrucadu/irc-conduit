@@ -1,7 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 
--- |Conduits for serialising and deserialising IRC messages.
+-- |
+-- Module      : Network.IRC.Conduit
+-- Copyright   : (c) 2016 Michael Walker
+-- License     : MIT
+-- Maintainer  : Michael Walker <mike@barrucadu.co.uk>
+-- Stability   : experimental
+-- Portability : OverloadedStrings, RankNTypes
+--
+-- Conduits for serialising and deserialising IRC messages.
 --
 -- The 'Event', 'Message', and 'Source' types are parameterised on the
 -- underlying representation, and are functors. Decoding and encoding

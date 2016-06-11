@@ -2,7 +2,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections     #-}
 
--- |Internal IRC conduit types and utilities.
+-- |
+-- Module      : Network.IRC.Conduit.Internal.Messages
+-- Copyright   : (c) 2016 Michael Walker
+-- License     : MIT
+-- Maintainer  : Michael Walker <mike@barrucadu.co.uk>
+-- Stability   : experimental
+-- Portability : DeriveFunctor, OverloadedStrings, TupleSections
+--
+-- Internal IRC conduit types and utilities. This module is NOT
+-- considered to form part of the public interface of this library.
 module Network.IRC.Conduit.Internal.Messages where
 
 import Control.Applicative ((<$>))
