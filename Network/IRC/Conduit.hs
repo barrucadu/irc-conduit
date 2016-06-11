@@ -55,7 +55,6 @@ module Network.IRC.Conduit
 import Control.Applicative      ((*>))
 import Control.Concurrent       (newMVar, takeMVar, putMVar, threadDelay)
 import Control.Concurrent.Async (Concurrently(..))
-import Control.Exception        (catch)
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (MonadIO, liftIO)
 import Data.ByteString          (ByteString)
@@ -69,9 +68,8 @@ import Data.Time.Clock          (NominalDiffTime, getCurrentTime, addUTCTime, di
 import Data.X509.Validation     (FailedReason(..))
 import Network.Connection       (TLSSettings(..))
 import Network.IRC.Conduit.Internal
-import Network.TLS              (ClientParams(..), ClientHooks(..), Supported(..), TLSException, Version(..), defaultParamsClient)
+import Network.TLS              (ClientParams(..), ClientHooks(..), Supported(..), Version(..), defaultParamsClient)
 import Network.TLS.Extra        (ciphersuite_all)
-import System.IO.Error          (catchIOError)
 
 -- *Conduits
 
@@ -167,25 +165,17 @@ ircTLSClient port host = ircWithConn $ runTLSClient $ mangle $ tlsClientConfig p
           return $ filter (`notElem` [UnknownCA, SelfSigned]) res
 
 -- |Run the IRC conduits using a provided connection.
+--
+-- Starts the connection and concurrently run the initialiser, event
+-- consumer, and message sources. Terminates as soon as one throws an
+-- exception.
 ircWithConn :: ((AppData -> IO ()) -> IO ())
             -- ^The initialised connection.
             -> IO ()
             -> Consumer (Either ByteString IrcEvent) IO ()
             -> Producer IO IrcMessage
             -> IO ()
-ircWithConn runner start cons prod = (go `catch` raiseTLS) `catchIOError` ignore
-  where
-    -- Start the connection and concurrently run the initialiser,
-    -- event consumer, and message sources: terminating as soon as one
-    -- throws an exception.
-    go = runner $ \appdata ->
-           runConcurrently $
-             Concurrently start *>
-             Concurrently (appSource appdata =$= exceptionalConduit $$ ircDecoder =$ cons) *>
-             Concurrently (prod $$ ircEncoder =$ appSink appdata)
-
-    -- Ignore all exceptions and just halt.
-    ignore _ = return ()
-
-    -- Rethrow TLS exceptions as IO exceptions
-    raiseTLS = const . ioError $ userError "TLS exception" :: TLSException -> IO ()
+ircWithConn runner start cons prod = runner $ \appdata -> runConcurrently $
+     Concurrently start
+  *> Concurrently (appSource appdata =$= exceptionalConduit $$ ircDecoder =$ cons)
+  *> Concurrently (prod $$ ircEncoder =$ appSink appdata)
