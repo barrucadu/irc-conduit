@@ -67,11 +67,12 @@ cabal-version:       >=1.10
 library
   -- Modules exported by the library.
   exposed-modules:     Network.IRC.Conduit
-  
-  -- Modules included in this library but not exported.
-  other-modules:       Network.IRC.Conduit.Internal
+                     , Network.IRC.Conduit.Internal
                      , Network.IRC.Conduit.Internal.Conduits
                      , Network.IRC.Conduit.Internal.Messages
+
+  -- Modules included in this library but not exported.
+  -- other-modules:     
 
   ghc-options:         -Wall
   
