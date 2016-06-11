@@ -1,5 +1,5 @@
-{-# LANGUAGE ImpredicativeTypes #-}
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 
 -- |Conduits for serialising and deserialising IRC messages.
 --
@@ -133,11 +133,11 @@ ircClient :: Int
           -> Producer IO IrcMessage
           -- ^The producer of irc messages
           -> IO ()
-ircClient port host = ircWithConn . runTCPClient $ clientSettings port host
+ircClient port host = ircWithConn $ runTCPClient $ clientSettings port host
 
 -- |Like 'ircClient', but with TLS.
 ircTLSClient :: Int -> ByteString -> IO () -> Consumer (Either ByteString IrcEvent) IO () -> Producer IO IrcMessage -> IO ()
-ircTLSClient port host = ircWithConn . runTLSClient . mangle $ tlsClientConfig port host
+ircTLSClient port host = ircWithConn $ runTLSClient $ mangle $ tlsClientConfig port host
   where
     -- Override the certificate validation and allowed ciphers.
     mangle tlsSettings = tlsSettings

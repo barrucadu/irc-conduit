@@ -1,5 +1,5 @@
-{-# LANGUAGE ImpredicativeTypes #-}
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 
 -- |Internal helper conduits
 module Network.IRC.Conduit.Internal.Conduits where
