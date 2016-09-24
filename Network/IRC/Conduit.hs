@@ -44,8 +44,11 @@ module Network.IRC.Conduit
 
     -- *Networking
     , ircClient
-    , ircTLSClient
     , ircWithConn
+    -- ** TLS
+    , ircTLSClient
+    , ircTLSClient'
+    , defaultTLSConfig
 
     -- *Utilities
     , rawMessage
@@ -141,29 +144,6 @@ ircClient :: Int
           -> IO ()
 ircClient port host = ircWithConn $ runTCPClient $ clientSettings port host
 
--- |Like 'ircClient', but with TLS.
-ircTLSClient :: Int -> ByteString -> IO () -> Consumer (Either ByteString IrcEvent) IO () -> Producer IO IrcMessage -> IO ()
-ircTLSClient port host = ircWithConn $ runTLSClient $ mangle $ tlsClientConfig port host
-  where
-    -- Override the certificate validation and allowed ciphers.
-    mangle tlsSettings = tlsSettings
-                         { tlsClientTLSSettings = TLSSettings cpara
-                           { clientHooks = (clientHooks cpara)
-                             { onServerCertificate = validate }
-                           , clientSupported = (clientSupported cpara)
-                             { supportedVersions = [TLS12, TLS11, TLS10]
-                             , supportedCiphers = ciphersuite_all }}}
-      where
-        cpara = defaultParamsClient (unpack $ decodeUtf8 host) ""
-
-        -- Make the TLS certificate validation a bit more generous. In
-        -- particular, allow self-signed certificates.
-        validate cs vc sid cc = do
-          -- First validate with the standard function
-          res <- (onServerCertificate $ clientHooks cpara) cs vc sid cc
-          -- Then strip out non-issues
-          return $ filter (`notElem` [UnknownCA, SelfSigned]) res
-
 -- |Run the IRC conduits using a provided connection.
 --
 -- Starts the connection and concurrently run the initialiser, event
@@ -179,3 +159,50 @@ ircWithConn runner start cons prod = runner $ \appdata -> runConcurrently $
      Concurrently start
   *> Concurrently (appSource appdata =$= exceptionalConduit $$ ircDecoder =$ cons)
   *> Concurrently (prod $$ ircEncoder =$ appSink appdata)
+
+-- **TLS
+
+-- |Like 'ircClient', but with TLS. The TLS configuration used is
+-- 'defaultTLSConfig'.
+ircTLSClient :: Int
+             -> ByteString
+             -> IO ()
+             -> Consumer (Either ByteString IrcEvent) IO ()
+             -> Producer IO IrcMessage -> IO ()
+ircTLSClient port host = ircTLSClient' (defaultTLSConfig port host)
+
+-- |Like 'ircTLSClient', but takes the configuration to use, which
+-- includes the host and port.
+ircTLSClient' :: TLSClientConfig
+              -> IO ()
+              -> Consumer (Either ByteString IrcEvent) IO ()
+              -> Producer IO IrcMessage -> IO ()
+ircTLSClient' cfg = ircWithConn (runTLSClient cfg)
+
+-- |The default TLS settings for 'ircTLSClient'.
+defaultTLSConfig :: Int
+                 -- ^The port number
+                 -> ByteString
+                 -- ^ The hostname
+                 -> TLSClientConfig
+defaultTLSConfig port host = (tlsClientConfig port host)
+  { tlsClientTLSSettings = TLSSettings cpara
+    { clientHooks = (clientHooks cpara)
+      { onServerCertificate = validate }
+    , clientSupported = (clientSupported cpara)
+      { supportedVersions = [TLS12, TLS11, TLS10]
+      , supportedCiphers = ciphersuite_all
+      }
+    }
+  }
+
+  where
+    cpara = defaultParamsClient (unpack $ decodeUtf8 host) ""
+
+    -- Make the TLS certificate validation a bit more generous. In
+    -- particular, allow self-signed certificates.
+    validate cs vc sid cc = do
+      -- First validate with the standard function
+      res <- (onServerCertificate $ clientHooks cpara) cs vc sid cc
+      -- Then strip out non-issues
+      return $ filter (`notElem` [UnknownCA, SelfSigned]) res
