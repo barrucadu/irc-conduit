@@ -61,7 +61,7 @@ import Control.Concurrent.Async (Concurrently(..))
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (MonadIO, liftIO)
 import Data.ByteString          (ByteString)
-import Data.Conduit             (Conduit, Consumer, Producer, (=$), ($$), (=$=), awaitForever, yield)
+import Data.Conduit             (Conduit, Consumer, Producer, (=$), ($$), (=$=), awaitForever, yield, runConduit)
 import Data.Conduit.Network     (AppData, clientSettings, runTCPClient, appSource, appSink)
 import Data.Conduit.Network.TLS (TLSClientConfig(..), tlsClientConfig, runTLSClient)
 import Data.Monoid              ((<>))
@@ -157,8 +157,15 @@ ircWithConn :: ((AppData -> IO ()) -> IO ())
             -> IO ()
 ircWithConn runner start cons prod = runner $ \appdata -> runConcurrently $
      Concurrently start
-  *> Concurrently (appSource appdata =$= exceptionalConduit $$ ircDecoder =$ cons)
-  *> Concurrently (prod $$ ircEncoder =$ appSink appdata)
+  *> Concurrently (runSource appdata)
+  *> Concurrently (runSink   appdata)
+
+  where
+    runSource appdata  = do
+      runConduit $ appSource appdata =$= ircDecoder =$ cons
+      ioError    $ userError "Upstream source closed."
+
+    runSink appdata = prod $$ ircEncoder =$ appSink appdata
 
 -- **TLS
 

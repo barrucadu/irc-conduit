@@ -14,11 +14,10 @@
 -- part of the public interface of this library.
 module Network.IRC.Conduit.Internal.Conduits where
 
-import Control.Arrow          ((&&&))
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Data.ByteString        (ByteString, isSuffixOf, singleton)
-import Data.Conduit           (Conduit, await, yield)
-import Data.Monoid            ((<>))
+import Control.Arrow   ((&&&))
+import Data.ByteString (ByteString, isSuffixOf, singleton)
+import Data.Conduit    (Conduit, await, yield)
+import Data.Monoid     ((<>))
 
 import qualified Data.ByteString as B
 
@@ -55,11 +54,3 @@ chunked = chunked' ""
             chunked' remainder
 
         Nothing -> return ()
-
--- |Throw an IO exception when the upstream conduit is closed.
-exceptionalConduit :: MonadIO m => Conduit a m a
-exceptionalConduit = do
-  val <- await
-  case val of
-    Just x  -> yield x >> exceptionalConduit
-    Nothing -> liftIO . ioError $ userError "Upstream source closed."
