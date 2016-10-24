@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 
@@ -7,7 +8,7 @@
 -- License     : MIT
 -- Maintainer  : Michael Walker <mike@barrucadu.co.uk>
 -- Stability   : experimental
--- Portability : OverloadedStrings, RankNTypes
+-- Portability : BangPatterns, OverloadedStrings, RankNTypes
 --
 -- Internal helper conduits. This module is NOT considered to form
 -- part of the public interface of this library.
@@ -25,7 +26,7 @@ import qualified Data.ByteString as B
 chunked :: Monad m => Conduit ByteString m ByteString
 chunked = chunked' ""
   where
-    chunked' leftover = do
+    chunked' !leftover = do
       -- Wait for a value from upstream
       val <- await
 
