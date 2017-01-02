@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE TupleSections     #-}
 
 -- |
@@ -9,7 +10,7 @@
 -- License     : MIT
 -- Maintainer  : Michael Walker <mike@barrucadu.co.uk>
 -- Stability   : experimental
--- Portability : BangPatterns, DeriveFunctor, OverloadedStrings, TupleSections
+-- Portability : BangPatterns, DeriveFunctor, OverloadedStrings, RankNTypes, TupleSections
 --
 -- Internal IRC conduit types and utilities. This module is NOT
 -- considered to form part of the public interface of this library.
@@ -29,6 +30,15 @@ import Text.Read           (readMaybe)
 import qualified Data.ByteString       as B
 import qualified Data.ByteString.Char8 as B8
 import qualified Network.IRC           as I
+
+-- * Internal Lens synonyms
+
+-- | See @<http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Lens Control.Lens.Lens.Lens>@.
+type Lens s t a b = forall f. Functor f => (a -> f b) -> s -> f t
+
+-- | A @<http://hackage.haskell.org/package/lens/docs/Control-Lens-Type.html#t:Simple Simple>@ 'Lens'.
+type Lens' s a = Lens s s a a
+
 
 -- *Conduits
 
