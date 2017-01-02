@@ -53,6 +53,9 @@ module Network.IRC.Conduit
     -- *Utilities
     , rawMessage
     , toByteString
+
+    -- *Lenses
+    , module Network.IRC.Conduit.Lens
     ) where
 
 import Control.Applicative      ((*>))
@@ -71,6 +74,7 @@ import Data.Time.Clock          (NominalDiffTime, getCurrentTime, addUTCTime, di
 import Data.X509.Validation     (FailedReason(..))
 import Network.Connection       (TLSSettings(..))
 import Network.IRC.Conduit.Internal
+import Network.IRC.Conduit.Lens
 import Network.TLS              (ClientParams(..), ClientHooks(..), Supported(..), Version(..), defaultParamsClient)
 import Network.TLS.Extra        (ciphersuite_all)
 
