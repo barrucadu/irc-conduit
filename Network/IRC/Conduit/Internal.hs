@@ -2,7 +2,6 @@
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections     #-}
-{-# LANGUAGE RankNTypes #-}
 
 -- |
 -- Module      : Network.IRC.Conduit.Internal
@@ -237,12 +236,3 @@ rawMessage :: ByteString
            -- ^The arguments
            -> IrcMessage
 rawMessage cmd = RawMsg . mkMessage cmd
-
--- * Internal Lens synonyms
-
--- | See @<http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Lens Control.Lens.Lens.Lens>@.
-type Lens s t a b = forall f. Functor f => (a -> f b) -> s -> f t
-
--- | A @<http://hackage.haskell.org/package/lens/docs/Control-Lens-Type.html#t:Simple Simple>@ 'Lens'.
-type Lens' s a = Lens s s a a
-
