@@ -23,6 +23,7 @@ import Data.Char           (ord)
 import Data.Conduit        (Conduit, await, yield)
 import Data.Maybe          (listToMaybe, isJust)
 import Data.Monoid         ((<>))
+import Data.Profunctor (Choice)
 import Data.String         (fromString)
 import Network.IRC.CTCP    (CTCPByteString, getUnderlyingByteString, orCTCP)
 import Text.Read           (readMaybe)
@@ -38,6 +39,12 @@ type Lens s t a b = forall f. Functor f => (a -> f b) -> s -> f t
 
 -- | A @<http://hackage.haskell.org/package/lens/docs/Control-Lens-Type.html#t:Simple Simple>@ 'Lens'.
 type Lens' s a = Lens s s a a
+
+-- | See @<http://hackage.haskell.org/package/lens/docs/Control-Lens-Prism.html#t:Prism Control.Lens.Prism.Prism>@.
+type Prism s t a b = forall p f. (Choice p, Applicative f) => p a (f b) -> p s (f t)
+
+-- | A @<http://hackage.haskell.org/package/lens/docs/Control-Lens-Type.html#t:Simple Simple>@ 'Prism'.
+type Prism' s a = Prism s s a a
 
 
 -- *Conduits
