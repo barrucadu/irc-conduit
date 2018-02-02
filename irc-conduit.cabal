@@ -82,7 +82,7 @@ library
   build-depends:       base                >=4.8   && <5
                      , async               >=2.0   && <2.2
                      , bytestring          >=0.10  && <0.11
-                     , conduit             >=1.2   && <1.4
+                     , conduit             >=1.2.8 && <1.4
                      , conduit-extra       >=1.1   && <1.4
                      , connection          >=0.2   && <0.3
                      , irc                 >=0.6   && <0.7

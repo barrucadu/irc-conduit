@@ -20,7 +20,7 @@ import Control.Applicative ((<$>))
 import Control.Arrow       ((&&&))
 import Data.ByteString     (ByteString, isSuffixOf, singleton, unpack)
 import Data.Char           (ord)
-import Data.Conduit        (Conduit, await, yield)
+import Data.Conduit        (ConduitM, await, yield)
 import Data.Maybe          (listToMaybe, isJust)
 import Data.Monoid         ((<>))
 import Data.Profunctor (Choice)
@@ -50,7 +50,7 @@ type Prism' s a = Prism s s a a
 -- *Conduits
 
 -- |Split up incoming bytestrings into new lines.
-chunked :: Monad m => Conduit ByteString m ByteString
+chunked :: Monad m => ConduitM ByteString ByteString m ()
 chunked = chunked' ""
   where
     chunked' !leftover = do
