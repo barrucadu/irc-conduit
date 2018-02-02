@@ -13,13 +13,15 @@ cache:
 # Build matrix configuration
 matrix:
   include:
-  - env: RESOLVER="lts-4"
-    addons: {apt: {packages: [libgmp-dev]}}
-  - env: RESOLVER="lts-5"
-    addons: {apt: {packages: [libgmp-dev]}}
   - env: RESOLVER="lts-6"
     addons: {apt: {packages: [libgmp-dev]}}
   - env: RESOLVER="lts-7"
+    addons: {apt: {packages: [libgmp-dev]}}
+  - env: RESOLVER="lts-8"
+    addons: {apt: {packages: [libgmp-dev]}}
+  - env: RESOLVER="lts-9"
+    addons: {apt: {packages: [libgmp-dev]}}
+  - env: RESOLVER="lts-10"
     addons: {apt: {packages: [libgmp-dev]}}
   - env: RESOLVER="nightly"
     addons: {apt: {packages: [libgmp-dev]}}
