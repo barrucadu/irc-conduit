@@ -38,8 +38,10 @@ module Network.IRC.Conduit
 
     -- *Conduits
     , ircDecoder
+    , ircDecoderMessage
     , ircLossyDecoder
     , ircEncoder
+    , ircEncoderMessage
     , floodProtector
 
     -- *Networking
@@ -79,13 +81,21 @@ import Network.IRC.Conduit.Lens
 import Network.TLS              (ClientParams(..), ClientHooks(..), Supported(..), Version(..), defaultParamsClient)
 import Network.TLS.Extra        (ciphersuite_strong)
 
+import qualified Network.IRC    as I
+
 -- *Conduits
 
 -- |A conduit which takes as input bytestrings representing encoded
--- IRC messages, and decodes them to events. If decoding fails, the
--- original bytestring is just passed through.
+-- IRC messages, and decodes them to events of type 'IrcEvent'.
+-- If decoding fails, the original bytestring is just passed through.
 ircDecoder :: Monad m => ConduitM ByteString (Either ByteString IrcEvent) m ()
 ircDecoder = chunked .| awaitForever (yield . fromByteString)
+
+-- |A conduit which takes as input bytestrings representing encoded
+-- IRC messages, and decodes them to messages of type 'I.Message'.
+-- If decoding fails, the original bytestring is just passed through.
+ircDecoderMessage :: Monad m => ConduitM ByteString (Either ByteString I.Message) m ()
+ircDecoderMessage = chunked .| awaitForever (yield . fromByteStringMessage)
 
 -- |Like 'ircDecoder', but discards messages which could not be
 -- decoded.
@@ -94,10 +104,15 @@ ircLossyDecoder = chunked .| awaitForever lossy
   where
     lossy bs = either (\_ -> return ()) yield $ fromByteString bs
 
--- |A conduit which takes as input irc messages, and produces as
--- output the encoded bytestring representation.
+-- |A conduit which takes as input irc messages of type 'IrcMessage',
+-- and produces as output the encoded bytestring representation.
 ircEncoder :: Monad m => ConduitM IrcMessage ByteString m ()
 ircEncoder = awaitForever (yield . (<>"\r\n") . toByteString)
+
+-- |A conduit which takes as input irc messages of type 'I.Message',
+-- and produces as output the encoded bytestring representation.
+ircEncoderMessage :: Monad m => ConduitM I.Message ByteString m ()
+ircEncoderMessage = awaitForever (yield . (<>"\r\n") . I.encode)
 
 -- |A conduit which rate limits output sent downstream. Awaiting on
 -- this conduit will block, even if there is output ready, until the
