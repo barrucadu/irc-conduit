@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE RankNTypes #-}
 
 -- |
 -- Module      : Network.IRC.Conduit
@@ -58,26 +58,33 @@ module Network.IRC.Conduit
     , module Network.IRC.Conduit.Lens
     ) where
 
-import Control.Applicative      ((*>))
-import Control.Concurrent       (newMVar, takeMVar, putMVar, threadDelay)
-import Control.Concurrent.Async (Concurrently(..))
-import Control.Monad            (when)
-import Control.Monad.IO.Class   (MonadIO, liftIO)
-import Data.ByteString          (ByteString)
-import Data.Conduit             (ConduitM, (.|), awaitForever, yield, runConduit)
-import Data.Conduit.Network     (AppData, clientSettings, runTCPClient, appSource, appSink)
-import Data.Conduit.Network.TLS (TLSClientConfig(..), tlsClientConfig, runTLSClient)
-import Data.Monoid              ((<>))
-import Data.Text                (unpack)
-import Data.Text.Encoding       (decodeUtf8)
-import Data.Time.Clock          (NominalDiffTime, getCurrentTime, addUTCTime, diffUTCTime)
-import Data.Void                (Void)
-import Data.X509.Validation     (FailedReason(..))
-import Network.Connection       (TLSSettings(..))
-import Network.IRC.Conduit.Internal
-import Network.IRC.Conduit.Lens
-import Network.TLS              (ClientParams(..), ClientHooks(..), Supported(..), Version(..), defaultParamsClient)
-import Network.TLS.Extra        (ciphersuite_strong)
+import           Control.Applicative          ((*>))
+import           Control.Concurrent           (newMVar, putMVar, takeMVar,
+                                               threadDelay)
+import           Control.Concurrent.Async     (Concurrently(..))
+import           Control.Monad                (when)
+import           Control.Monad.IO.Class       (MonadIO, liftIO)
+import           Data.ByteString              (ByteString)
+import           Data.Conduit                 (ConduitM, awaitForever,
+                                               runConduit, yield, (.|))
+import           Data.Conduit.Network         (AppData, appSink, appSource,
+                                               clientSettings, runTCPClient)
+import           Data.Conduit.Network.TLS     (TLSClientConfig(..),
+                                               runTLSClient, tlsClientConfig)
+import           Data.Monoid                  ((<>))
+import           Data.Text                    (unpack)
+import           Data.Text.Encoding           (decodeUtf8)
+import           Data.Time.Clock              (NominalDiffTime, addUTCTime,
+                                               diffUTCTime, getCurrentTime)
+import           Data.Void                    (Void)
+import           Data.X509.Validation         (FailedReason(..))
+import           Network.Connection           (TLSSettings(..))
+import           Network.IRC.Conduit.Internal
+import           Network.IRC.Conduit.Lens
+import           Network.TLS                  (ClientHooks(..),
+                                               ClientParams(..), Supported(..),
+                                               Version(..), defaultParamsClient)
+import           Network.TLS.Extra            (ciphersuite_strong)
 
 -- *Conduits
 

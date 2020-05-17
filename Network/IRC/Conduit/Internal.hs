@@ -1,8 +1,8 @@
-{-# LANGUAGE BangPatterns      #-}
-{-# LANGUAGE DeriveFunctor     #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TupleSections #-}
 
 -- |
 -- Module      : Network.IRC.Conduit.Internal
@@ -16,17 +16,19 @@
 -- considered to form part of the public interface of this library.
 module Network.IRC.Conduit.Internal where
 
-import Control.Applicative ((<$>))
-import Control.Arrow       ((&&&))
-import Data.ByteString     (ByteString, isSuffixOf, singleton, unpack)
-import Data.Char           (ord)
-import Data.Conduit        (ConduitM, await, yield)
-import Data.Maybe          (listToMaybe, isJust)
-import Data.Monoid         ((<>))
-import Data.Profunctor (Choice)
-import Data.String         (fromString)
-import Network.IRC.CTCP    (CTCPByteString, getUnderlyingByteString, orCTCP)
-import Text.Read           (readMaybe)
+import           Control.Applicative   ((<$>))
+import           Control.Arrow         ((&&&))
+import           Data.ByteString       (ByteString, isSuffixOf, singleton,
+                                        unpack)
+import           Data.Char             (ord)
+import           Data.Conduit          (ConduitM, await, yield)
+import           Data.Maybe            (isJust, listToMaybe)
+import           Data.Monoid           ((<>))
+import           Data.Profunctor       (Choice)
+import           Data.String           (fromString)
+import           Network.IRC.CTCP      (CTCPByteString, getUnderlyingByteString,
+                                        orCTCP)
+import           Text.Read             (readMaybe)
 
 import qualified Data.ByteString       as B
 import qualified Data.ByteString.Char8 as B8
