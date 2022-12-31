@@ -13,8 +13,8 @@ import           Data.ByteString              (ByteString)
 import           Data.Profunctor              (Choice(right'),
                                                Profunctor(dimap))
 
-import           Network.IRC.CTCP             (CTCPByteString)
 import           Network.IRC.Conduit.Internal
+import           Network.IRC.CTCP             (CTCPByteString)
 
 -- * Lenses for 'Event'
 
