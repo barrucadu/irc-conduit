@@ -16,14 +16,12 @@
 -- considered to form part of the public interface of this library.
 module Network.IRC.Conduit.Internal where
 
-import           Control.Applicative   ((<$>))
 import           Control.Arrow         ((&&&))
 import           Data.ByteString       (ByteString, isSuffixOf, singleton,
                                         unpack)
 import           Data.Char             (ord)
 import           Data.Conduit          (ConduitM, await, yield)
 import           Data.Maybe            (isJust, listToMaybe)
-import           Data.Monoid           ((<>))
 import           Data.Profunctor       (Choice)
 import           Data.String           (fromString)
 import           Network.IRC.CTCP      (CTCPByteString, getUnderlyingByteString,
