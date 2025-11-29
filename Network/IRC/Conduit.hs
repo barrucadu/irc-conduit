@@ -58,7 +58,6 @@ module Network.IRC.Conduit
     , module Network.IRC.Conduit.Lens
     ) where
 
-import           Control.Applicative          ((*>))
 import           Control.Concurrent           (newMVar, putMVar, takeMVar,
                                                threadDelay)
 import           Control.Concurrent.Async     (Concurrently(..))
@@ -71,7 +70,6 @@ import           Data.Conduit.Network         (AppData, appSink, appSource,
                                                clientSettings, runTCPClient)
 import           Data.Conduit.Network.TLS     (TLSClientConfig(..),
                                                runTLSClient, tlsClientConfig)
-import           Data.Monoid                  ((<>))
 import           Data.Text                    (unpack)
 import           Data.Text.Encoding           (decodeUtf8)
 import           Data.Time.Clock              (NominalDiffTime, addUTCTime,
