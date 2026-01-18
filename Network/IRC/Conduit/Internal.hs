@@ -167,6 +167,9 @@ data Message a = Privmsg (Target a) (Either CTCPByteString a)
 fromByteString :: ByteString -> Either ByteString IrcEvent
 fromByteString bs = maybe (Left bs) (Right . uncurry (Event bs)) (attemptDecode bs)
 
+fromByteStringMessage :: ByteString -> Either ByteString I.Message
+fromByteStringMessage bs = maybe (Left bs) Right (I.decode bs)
+
 -- |Attempt to decode a ByteString into a message, returning a Nothing
 -- if either the source or the message can't be determined.
 attemptDecode :: ByteString -> Maybe (IrcSource, IrcMessage)
